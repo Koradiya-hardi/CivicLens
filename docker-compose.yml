@@ -1,0 +1,52 @@
+# Run the whole app with:   docker compose up --build
+#   frontend -> http://localhost:5173      API -> http://localhost:5001/api/health
+#
+# The database is MongoDB ATLAS (your existing cluster) because Vector Search is an
+# Atlas feature. Put your values in backend/.env (see backend/.env.example).
+#
+# Want a database on your own machine instead? Start with:
+#   docker compose --profile local-db up --build
+# and set MONGODB_URI=mongodb://mongo:27017/CivicLens?directConnection=true in backend/.env.
+# NOTE: that uses MongoDB's "Atlas Local" image; you must create the vector index in it
+# yourself (same 384-dimension, cosine definition as in Atlas). Untested - Atlas is the
+# supported path.
+
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: "5001"
+      # the browser calls the API from this origin (the frontend container, published on 5173)
+      CLIENT_URL: http://localhost:5173
+    ports:
+      - "5001:5001"
+    volumes:
+      - uploads:/app/uploads
+      - models:/app/node_modules/@xenova/transformers/.cache
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:5001/api
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  mongo:
+    profiles: ["local-db"]
+    image: mongodb/mongodb-atlas-local:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  uploads:
+  models:
+  mongo-data:

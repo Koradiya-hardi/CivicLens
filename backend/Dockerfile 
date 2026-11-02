@@ -1,0 +1,42 @@
+# ---------- stage 1: compile TypeScript ----------
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+# ---------- stage 2: small runtime image ----------
+FROM node:20-bookworm-slim
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Only production dependencies (no TypeScript, nodemon, ts-node...).
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=build /app/dist ./dist
+
+# uploads/  = admin-uploaded documents          (mounted as a volume by docker-compose)
+# .cache/   = the embedding model, ~90 MB, downloaded on first use (also a volume,
+#             so it is NOT re-downloaded every time the container is rebuilt)
+RUN mkdir -p uploads node_modules/@xenova/transformers/.cache \
+ && chown -R node:node uploads node_modules/@xenova/transformers/.cache
+
+USER node
+
+# Download the embedding model NOW (while building) instead of on the first visitor's
+# question. Non-fatal: if the download fails here, the server just fetches it on first use.
+RUN node -e "import('@xenova/transformers').then(m=>m.pipeline('feature-extraction','Xenova/all-MiniLM-L6-v2')).then(()=>console.log('model cached'))" \
+ || echo "model prefetch failed - it will download on first use"
+
+# 7860 is the port Hugging Face Spaces expects. docker-compose overrides PORT for local use.
+EXPOSE 7860
+ENV PORT=7860
+
+# A container is "healthy" when the API answers.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["node", "dist/server.js"]
