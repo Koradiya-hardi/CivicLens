@@ -371,7 +371,8 @@ export const askQuestionStream = asyncHandler(async (req: Request, res: Response
       toHistory(recentMessages),
       (piece) => send({ type: "chunk", text: piece })
     );
-  } catch {
+  } catch(err) {
+    console.error("[chat] answer generation failed:", err);
     send({ type: "error", message: "Failed to generate an answer. Please try again." });
     return res.end();
   }
