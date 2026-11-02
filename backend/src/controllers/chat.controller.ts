@@ -313,7 +313,8 @@ export const askQuestionStream = asyncHandler(async (req: Request, res: Response
         reply += piece;
         send({ type: "chunk", text: piece });
       });
-    } catch {
+    } catch (err) {
+      console.error("[chat] small talk generation failed:", err);
       // Keep whatever already reached the user. Only if NOTHING was sent
       // do we fall back to a canned greeting - never glue one onto a
       // half-finished reply.
@@ -371,7 +372,7 @@ export const askQuestionStream = asyncHandler(async (req: Request, res: Response
       toHistory(recentMessages),
       (piece) => send({ type: "chunk", text: piece })
     );
-  } catch(err) {
+  } catch (err) {
     console.error("[chat] answer generation failed:", err);
     send({ type: "error", message: "Failed to generate an answer. Please try again." });
     return res.end();
