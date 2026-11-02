@@ -7,8 +7,7 @@ CivicLens is a full-stack Retrieval-Augmented Generation (RAG) app. Admins uploa
 **Live demo:** https://civic-lens-one-wine.vercel.app
 *(The API runs on a free host that sleeps when idle. The first request after a quiet period can take about a minute.)*
 
-<img width="1440" height="900" alt="Screenshot 2026-11-01 at 6 27 18 PM" src="https://github.com/user-attachments/assets/7373a27d-8252-4a28-bc40-cb5fb66fbe49" />
-
+<img width="1440" height="812" alt="Screenshot 2026-11-01 at 6 27 18 PM" src="https://github.com/user-attachments/assets/44b6698c-fb8f-445f-b231-3852f50d044a" />
 
 ## Features
 - **Grounded answers with citations.** Questions are matched against document chunks. If nothing relevant is found, the assistant says so instead of guessing.
