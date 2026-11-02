@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import createApp from "./app";
 import connectDB from "./config/db";
 import { validateEnv } from "./config/env";
-
+import { generateEmbedding } from "./services/embedding.service";
 // app.ts has already loaded .env (dotenv) by the time this runs.
 const PORT = process.env.PORT || 5000;
 
@@ -18,6 +18,11 @@ const startServer = async () => {
   const server = app.listen(PORT, () => {
     console.log(`CivicLens API running on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    if (process.env.WARM_EMBEDDINGS === "1") {
+      generateEmbedding("warm up")
+        .then(() => console.log("[warmup] embedding model ready"))
+        .catch((err) => console.warn("[warmup] failed (it will retry on first use):", err.message));
+    }
   });
 
   // Graceful shutdown: when Docker/Render stops the container (SIGTERM) or you
